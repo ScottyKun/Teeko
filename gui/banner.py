@@ -2,11 +2,11 @@ import pygame
 import config
 
 class Banner:
-    def __init__(self, surface):
+    def __init__(self, surface, p1, p2):
         self.surface = surface
         self.font = pygame.font.SysFont("Arial", 24, bold=True)  # police réduite
-        self.player1_name = "Player 1"
-        self.player2_name = "Player 2"
+        self.player1_name = p1
+        self.player2_name = p2
 
     def draw(self, current_player=1):
         banner_rect = pygame.Rect(0, 0, config.WINDOW_WIDTH, 70)

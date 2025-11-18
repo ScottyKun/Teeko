@@ -1,16 +1,8 @@
 import pygame
-import sys
 import config
-from gui.board import Board
-from gui.banner import Banner
+from games.game import Game
+from gui.menu import Menu
 
-def get_nearest_point(pos, board):
-    x, y = pos
-    for px, py in board.points:
-        dist = ((x - px) ** 2 + (y - py) ** 2) ** 0.5
-        if dist < config.POINT_RADIUS * 2:  # tolérance
-            return (px, py)
-    return None
 
 
 def main():
@@ -19,29 +11,42 @@ def main():
     pygame.display.set_caption(" Teeko ")  
     clock = pygame.time.Clock()
 
-    board = Board(screen)
-    banner = Banner(screen)
-    current_player = 1
+    menu = Menu(screen)
+    game = None
+    state = "menu"
 
     
-    while True:
+    running = True
+    while running:
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
-                pygame.quit()
-                sys.exit()
+                running = False
 
-            if event.type == pygame.MOUSEBUTTONDOWN:
-                click_pos = pygame.mouse.get_pos()
-                nearest = get_nearest_point(click_pos, board)
-                if nearest:
-                    print("Intersection cliquée :", nearest)
-                    # Alternance du joueur actif
-                    current_player = 2 if current_player == 1 else 1
+            if state == "menu":
+                action = menu.handle_event(event)
+                if isinstance(action, dict):  # paramètres renvoyés
+                    game = Game(screen,
+                        mode=action["mode"],
+                        difficulty=action["difficulty"],
+                        player1_name=action["player1_name"],
+                        player2_name=action["player2_name"])
+                    state = "game"
 
-        board.draw()
-        banner.draw(current_player=current_player)
+            elif state == "game":
+             if event.type == pygame.MOUSEBUTTONDOWN:
+                game.handle_click(event.pos)
+
+        # Mise à jour et affichage
+        if state == "menu":
+            menu.draw()
+        elif state == "game":
+            game.update()
+            game.draw()
+
         pygame.display.flip()
         clock.tick(config.FPS)
+
+pygame.quit()
 
 
 if __name__ == "__main__":
