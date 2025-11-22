@@ -1,10 +1,12 @@
 from PrologRules.ia_helper import switch_player
 
-class MinMax:
-    def __init__(self, manager, evaluator, max_depth=2):
+class MinMaxOp:
+    def __init__(self, manager, evaluator, engine, max_depth=3):
         self.m = manager
         self.evaluator = evaluator
         self.max_depth = max_depth
+        self.transpo = {}
+        self.engine = engine 
     
     def compute(self, state, player):
         """
@@ -20,6 +22,12 @@ class MinMax:
 
     
     def minmax(self, state, player, depth, maximizing):
+
+        key = (tuple(state), player, depth, maximizing)
+        if key in self.transpo:
+            print(f"[CACHE HIT] → état déjà connu pour {player} / depth={depth}")
+            return self.transpo[key]
+        
 
         # État terminal ou profondeur atteinte -> évaluation statique
         if depth == 0 or self.m.is_terminal(state):
@@ -39,13 +47,14 @@ class MinMax:
             best_score = -999999
 
             for move in legal_moves:
-                new_state = self.m.apply_move(state, player, move)
+                new_state = self.engine.simulate_move(state, player, move)
                 score, _ = self.minmax(new_state, switch_player(player), depth - 1, False)
 
                 if score > best_score:
                     best_score = score
                     best_move = move
 
+            self.transpo[key] = (best_score, best_move)
             return best_score, best_move
 
         #minimizing player
@@ -53,11 +62,12 @@ class MinMax:
             best_score = 999999
 
             for move in legal_moves:
-                new_state = self.m.apply_move(state, player, move)
+                new_state = self.engine.simulate_move(state, player, move)
                 score, _ = self.minmax(new_state, switch_player(player), depth - 1, True)
 
                 if score < best_score:
                     best_score = score
                     best_move = move
-
+            
+            self.transpo[key] = (best_score, best_move)
             return best_score, best_move

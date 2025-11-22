@@ -1,6 +1,7 @@
 import pygame
 import config
 from gui.pieces import Piece
+from PrologRules.prolog_manager import PrologManager
 
 class Board:
     def __init__(self, surface):
@@ -11,10 +12,47 @@ class Board:
         self.occupied_positions = []
         self.phase = "placement"
 
+        self.manager = PrologManager()
         # === coordonnées logiques : 0..4 ===
         for row in range(config.BOARD_ROWS):
             for col in range(config.BOARD_ROWS):
                 self.points.append((row, col))
+
+    #
+    def to_prolog_state(self):
+        state = ["e"]*25
+        for p in self.player1_pieces:
+            r,c = p.position
+            state[r*5+c] = "n"
+        for p in self.player2_pieces:
+            r,c = p.position
+            state[r*5+c] = "b"
+        return state
+    
+
+    #
+    def update_from_prolog_state(self, state):
+        self.player1_pieces.clear()
+        self.player2_pieces.clear()
+        self.occupied_positions.clear()
+
+        for idx,val in enumerate(state):
+            r = idx//5
+            c = idx%5
+            if val=="n":
+                self.player1_pieces.append(Piece((r,c),1))
+                self.occupied_positions.append((r,c))
+                
+            elif val=="b":
+                self.player2_pieces.append(Piece((r,c),2))
+                self.occupied_positions.append((r,c))
+            
+    
+    #
+    def update_phase_from_prolog(self):
+        phase = self.manager.get_phase(self.to_prolog_state())
+        if phase:
+            self.phase = phase
 
     # Convertit (x,y) logique → position pixel
     def logical_to_pixel(self, pos):

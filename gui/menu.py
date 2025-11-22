@@ -17,7 +17,7 @@ class Menu:
             self.background = None
 
         # Données du menu
-        self.modes = ["Player vs Player", "Player vs IA", "IA vs IA"]
+        self.modes = ["PvsP", "PvsIA", "IAvsIA"]
         self.mode_index = 0
         self.mode = self.modes[self.mode_index]
 
@@ -52,10 +52,10 @@ class Menu:
                 }
 
             # Champs de texte
-            if self.mode in ["Player vs Player", "Player vs IA"]:
+            if self.mode in ["PvsP", "PvsIA"]:
                 if self.input_player1.collidepoint(event.pos):
                     self.active_input = "p1"
-                elif self.mode == "Player vs Player" and self.input_player2.collidepoint(event.pos):
+                elif self.mode == "PvsP" and self.input_player2.collidepoint(event.pos):
                     self.active_input = "p2"
                 else:
                     self.active_input = None
@@ -66,11 +66,11 @@ class Menu:
                 self.mode = self.modes[self.mode_index]
 
                 # Ajuster les champs selon le mode
-                if self.mode == "Player vs Player":
+                if self.mode == "PvsP":
                     self.show_difficulty = False
                     self.player1_name = ""
                     self.player2_name = ""
-                elif self.mode == "Player vs IA":
+                elif self.mode == "PvsIA":
                     self.show_difficulty = True
                     self.player1_name = ""
                     self.player2_name = "IA"
@@ -105,6 +105,16 @@ class Menu:
         if now - self.cursor_timer > 500:
             self.cursor_visible = not self.cursor_visible
             self.cursor_timer = now
+    
+    def write(self, text):
+        if text=="PvsP":
+            return "Joueur vs Joueur"
+        
+        if text=="PvsIA":
+            return "Joueur vs IA"
+        
+        if text=="IAvsIA":
+            return "IA vs IA"
 
     def draw(self):
         # Fond
@@ -121,7 +131,7 @@ class Menu:
 
         # Mode
         pygame.draw.rect(self.surface, (80, 80, 120), self.mode_rect, border_radius=8)
-        mode_text = self.font_text.render(self.mode, True, (255, 255, 255))
+        mode_text = self.font_text.render(self.write(self.mode), True, (255, 255, 255))
         self.surface.blit(mode_text, (self.mode_rect.x + 10, self.mode_rect.y + 5))
 
         # Difficulté
@@ -131,9 +141,9 @@ class Menu:
             self.surface.blit(diff_text, (self.diff_rect.x + 10, self.diff_rect.y + 5))
 
         # Inputs
-        if self.mode in ["Player vs Player", "Player vs IA"]:
-            self.draw_input(self.input_player1, self.player1_name, "Nom Joueur 1" if self.mode == "Player vs Player" else "Nom Joueur")
-            if self.mode == "Player vs Player":
+        if self.mode in ["PvsP", "PvsIA"]:
+            self.draw_input(self.input_player1, self.player1_name, "Nom Joueur 1" if self.mode == "PvsP" else "Nom Joueur")
+            if self.mode == "PvsP":
                 self.draw_input(self.input_player2, self.player2_name, "Nom Joueur 2")
 
         # Bouton start

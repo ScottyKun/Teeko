@@ -30,13 +30,19 @@ def move_to_python(move_str):
 
 
 #coup python en un dict pour les algos
-def python_to_move_tuple(move):
-    if move[0] == "placement":
-        return {"type": "placement", "index": move[1]}
-    elif move[0] == "shift":
-        return {"type": "shift", "from": move[1], "to": move[2]}
-    else:
-        raise ValueError(f"Type de coup inconnu : {move}")
+def python_to_move_tuple(m):
+    # Si c'est déjà un tuple : OK
+    if isinstance(m, tuple):
+        return m
+
+    # Si c'est un dict : convertir proprement
+    if isinstance(m, dict):
+        if m.get("type") == "placement":
+            return ("placement", m["index"])
+        if m.get("type") == "shift":
+            return ("shift", m["from"], m["to"])
+    
+    raise ValueError("Format de move inconnu: " + str(m))
     
 #conversion liste imbriquee prolog en liste python
 def flatten(results):

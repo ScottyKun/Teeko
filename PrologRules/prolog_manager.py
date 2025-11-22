@@ -85,8 +85,8 @@ class PrologManager:
     #renvoie gagnant (b ou n ou none)
     def winner(self, state):
         state = python_list_to_prolog(state)
+        #print("[DEBUG] State envoyé à Prolog : ", state)
         res = list(self.prolog.query(f"game_over({state}, W)"))
-
         if res:
             return res[0]["W"]
 
@@ -135,9 +135,21 @@ class PrologManager:
     #winning positions
     def get_winning_positions(self):
         res = list(self.prolog.query("winning_positions(Pos)"))
-
         if res:
             raw = res[0]["Pos"]
             return [[int(i) for i in combo] for combo in raw]
 
         return []
+    
+    # Valider un move Python
+    def validate_move(self, state, player, move):
+
+        if move[0] == "placement":
+            index = move[1]
+            res = list(self.prolog.query(f"valid_placement({python_list_to_prolog(state)}, {player}, {index})"))
+            return bool(res)
+        elif move[0] == "shift":
+            frm, to = move[1], move[2]
+            res = list(self.prolog.query(f"valid_shift({python_list_to_prolog(state)}, {player}, {frm}, {to})"))
+            return bool(res)
+        return False
