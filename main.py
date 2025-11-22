@@ -33,8 +33,12 @@ def main():
                     state = "game"
 
             elif state == "game":
-             if event.type == pygame.MOUSEBUTTONDOWN:
-                game.handle_click(event.pos)
+                if event.type == pygame.MOUSEBUTTONDOWN:
+                    game.handle_click(event.pos)
+            
+                if event.type == pygame.USEREVENT+1:
+                    pygame.time.set_timer(pygame.USEREVENT+1, 0)
+                    game.ai_play()
 
         # Mise à jour et affichage
         if state == "menu":
@@ -49,5 +53,5 @@ def main():
 pygame.quit()
 
 
-#if __name__ == "__main__":
- #   main()
+if __name__ == "__main__":
+     main()
