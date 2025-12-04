@@ -12,11 +12,11 @@ if project_root not in sys.path:
 from PrologRules.prolog_manager import PrologManager
 from PrologRules.ia_helper import python_to_move_tuple
 from AI.evaluation import Evaluation
-from AI.minmax import MinMax
-from AI.minmax_op import MinMaxOp
+
+from AI.minmax_alphabeta import MinMaxAlphaBeta
 
 class AIEngine:
-    def __init__(self, prolog_file="teeko_rules.pl", max_depth=3):
+    def __init__(self, prolog_file="teeko_rules.pl", max_depth=4):
         # Manager pour communiquer avec Prolog
         self.manager = PrologManager(prolog_file)
 
@@ -24,7 +24,8 @@ class AIEngine:
         self.evaluator = Evaluation(self.manager)
 
         # Algorithme MinMax
-        self.minmax = MinMaxOp(self.manager, self.evaluator,self, max_depth)
+        self.minmax = MinMaxAlphaBeta(self.manager, self.evaluator,self, max_depth)
+        self.minmax.time_limit = 3.0
 
     def get_best_move(self,state,player):
         score, move = self.minmax.compute(state, player)
@@ -61,14 +62,15 @@ class AIEngine:
             return new_state
 
         # Si déplacement
-        if move[0] == "move":
-            src, dst = move[1]
+        if move[0] == "shift":
+            src, dst = move[1], move[2]
             new_state[src] = 'e'
             new_state[dst] = player
             return new_state
 
         return new_state
-
+    
+    
 
 """
 #test de AIEngine
@@ -76,19 +78,21 @@ class AIEngine:
 if __name__ == "__main__":
     prolog_manager = PrologManager("teeko_rules.pl")
     evaluator = Evaluation(prolog_manager)
-    ai = MinMax(prolog_manager, evaluator, max_depth=2)
+    engine=AIEngine()
+    ai = MinMaxAlphaBeta(prolog_manager, evaluator, engine, max_depth=3)
 
     # État initial vide
     initial_state = [
         'e','e','e','e','e',
-        'e','b','b','n','e',
-        'e','b','n','e','e',
-        'e','e','n','n','e',
+        'e','b','n','n','e',
+        'e','b','b','e','e',
+        'e','n','b','n','e',
         'e','e','e','e','e'
     ]
     player = 'b'
 
 
     score, move = ai.compute(initial_state, player)
+
     print(f"Meilleur score: {score}, Meilleur coup: {move}")
 """

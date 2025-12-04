@@ -1,7 +1,7 @@
 from PrologRules.ia_helper import switch_player
 
 class MinMaxOp:
-    def __init__(self, manager, evaluator, engine, max_depth=3):
+    def __init__(self, manager, evaluator, engine, max_depth=2):
         self.m = manager
         self.evaluator = evaluator
         self.max_depth = max_depth

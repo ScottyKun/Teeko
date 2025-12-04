@@ -20,8 +20,13 @@ class Game:
         self.difficulty = difficulty
         self.p1=player1_name
         self.p2=player2_name
-        if self.board.phase == "placement":
-            self.show_message("Phase de placement", duration=1500)
+        self.game_over = False
+        self.show_message("Phase de placement")
+        self.last_phase = "placement"
+
+        if self.mode == "IAvsIA":
+            pygame.time.set_timer(pygame.USEREVENT+1, 300)
+         
 
     #
     def player_to_prolog(self,player):
@@ -35,10 +40,13 @@ class Game:
     def is_ai(self,player):
         if self.mode == "PvsP":
             return False
-        if self.mode == "PvsIA" and player == 2:
-            return True
+        
+        if self.mode == "PvsIA":
+            return player == 2
+        
         if self.mode == "IAvsIA":
             return True
+        
         return False
     
     #
@@ -46,6 +54,13 @@ class Game:
         return row * 5 + col
 
     def handle_click(self, pos):
+        if self.game_over:
+            return
+        
+        #
+        if self.is_ai(self.current_player):
+            return
+        
         # récupérer le point le plus proche d'un clic
         nearest = self.get_nearest_point(pos)
         if not nearest:
@@ -81,6 +96,7 @@ class Game:
                 # Vérifier que la case appartient bien au joueur courant
                 if state[index] != prolog_player:
                     print("Tu dois sélectionner un de TES pions.")
+                    self.show_message("Tu dois sélectionner un de TES pions.")
                     return
                 
                 self.selected_from = index
@@ -106,19 +122,25 @@ class Game:
         # --- Mise à jour du plateau seulement si le nouvel état est valide ---
         if new_state:
             self.board.update_from_prolog_state(new_state)
+            
+            #affcihage de la phase
+            if self.board.phase != self.last_phase:
+                phase_txt = "Phase de placement" if self.board.phase == "placement" else "Phase de déplacement"
+                self.show_message(phase_txt)
+                self.last_phase = self.board.phase
         else:
             print("Erreur: Prolog n'a pas renvoyé de nouvel état.")
             return
 
         # check winner
-        winner = self.engine.get_winner(new_state)
-        if winner  in ('b', 'n'):
+        winner = self.engine.get_winner(self.board.to_prolog_state())
+        if winner in ('b', 'n'):
             if winner == 'n':
-                self.show_message(f"{self.p1} a gagné la partie !", duration=2000)
+                self.show_message(f"{self.p1} a gagné la partie !", duration=5000)
             else:
-                self.show_message(f"{self.p2} a gagné la partie !", duration=2000)
-            # On peut ajouter un return ici pour arrêter de jouer si gagné
-            return 
+                self.show_message(f"{self.p2} a gagné la partie !", duration=5000)
+            self.game_over = True
+            return
 
         # changement de player
         self.current_player = self.opponent(self.current_player)
@@ -126,9 +148,9 @@ class Game:
         
         # Si on est en mode vs IA
         if self.is_ai(self.current_player):
-            # Petit délai pour voir le coup du joueur avant que l'IA joue (optionnel mais sympa)
+            # Petit délai pour voir le coup du joueur avant que l'IA joue 
             pygame.time.set_timer(pygame.USEREVENT+1, 300)
-            #self.ai_play()
+            
 
 
     # tour de IA
@@ -142,6 +164,15 @@ class Game:
             
             if new_state:
                 self.board.update_from_prolog_state(new_state)
+
+                self.board.phase = self.engine.get_phase(self.board.to_prolog_state())
+                
+                #affcihage de la phase
+                if self.board.phase != self.last_phase:
+                    phase_txt = "Phase de placement" if self.board.phase == "placement" else "Phase de déplacement"
+                    self.show_message(phase_txt)
+                    self.last_phase = self.board.phase
+
             else:
                 print("Erreur critique : L'IA a généré un coup que Prolog n'arrive pas à appliquer.")
         else:
@@ -153,18 +184,18 @@ class Game:
                 self.show_message(f"{self.p1} a gagné la partie !", duration=5000)
             else:
                 self.show_message(f"{self.p2} a gagné la partie !", duration=5000)
+            self.game_over = True
             return
 
         # changement de player
         self.current_player = self.opponent(self.current_player)
         print(self.current_player)
 
-    #
-    def affiche_phase(self):
-        if self.board.phase == "placement":
-            return None
-        elif self.board.phase == "deplacement":
-            self.show_message("Phase de déplacement", duration=1500)
+        #
+        if self.is_ai(self.current_player):
+            pygame.time.set_timer(pygame.USEREVENT+1, 300)
+
+    
 
     # determiner le point le plus proche d'un clic
     def get_nearest_point(self, pos):
@@ -186,6 +217,7 @@ class Game:
     def draw(self):
         self.board.draw()
         self.banner.draw(current_player=self.current_player)
+        
 
         # === Affichage du message temporaire ===
         if self.phase_message:

@@ -25,17 +25,6 @@ class Evaluation:
     def __init__(self, manager):
         self.m=manager
 
-        #positions centrales
-        self.center_indices = {6, 7, 8, 11, 12, 13, 16, 17, 18}
-
-        #heatmap
-        self.heatmap= [
-            1,  1,  2,  2, 3,
-            2,  4,  6,  4, 2,
-            2,  6, 10,  6, 2,
-            2,  4,  6,  4, 2,
-            1,  2,  2,  2, 1
-        ]
 
         #positions gagnantes
         self.winning_patterns = self.m.get_winning_positions()
@@ -51,80 +40,80 @@ class Evaluation:
         
         score=0
 
-        #alignements
-        score += self.score_alignements(state,player)*10
-
-        #controle du centre
-        score += self.score_center(state,player)*3
-
-        #mobilite
-        score += self.score_mobility(state,player)
-
-        #menaces
-        score += self.score_threats(state, player) * 25
-
-        #carres potentiels
-        score += self.score_square_potential(state, player) * 12
-
-        #heatmap
-        score += self.score_heatmap(state, player) * 4
-
-        return score
-
-    def score_alignements(self,state,player):
-        #le score est base sur la proximite des pions
-
-        positions=self.m.get_player_positions(state,player)
-        if len(positions)<=1:
-            return 0
-        
-        score=0
-        for i in range(len(positions)):
-            for j in range(i + 1, len(positions)):
-                d = abs(positions[i] - positions[j])
-
-                # voisins directs
-                if d in (1, 5, 6, 4):
-                    score += 3
-                # voisins diagonaux un peu éloignés
-                elif d in (2, 10):
-                    score += 1
-
-        return score
-    
-    def score_center(self,state,player):
-        positions = self.m.get_player_positions(state, player)
-        return sum(1 for pos in positions if pos in self.center_indices)
-    
-    def score_mobility(self, state, player):
-        moves = self.m.get_legal_moves(state, player)
-        return len(moves)
-    
-    def score_heatmap(self,state,player):
-        positions = self.m.get_player_positions(state, player)
-        return sum(self.heatmap[pos] for pos in positions)
-    
-    def score_square_potential(self,state,player):
-        positions = set(self.m.get_player_positions(state, player))
-        if len(positions) < 3:
-            return 0
+        opponent = switch_player(player)
+        player_pos = self.m.get_player_positions(state, player)
+        opp_pos = self.m.get_player_positions(state, opponent)
 
         score = 0
 
-        # Liste des 9 carrés possibles sur un plateau 5x5
-        squares = [
-            [0, 1, 5, 6], [1, 2, 6, 7], [2, 3, 7, 8],
-            [5, 6, 10,11],[6, 7, 11,12],[7, 8, 12,13],
-            [10,11,15,16],[11,12,16,17],[12,13,17,18]
+        # --- 1) HEATMAP (améliorée) ---
+        HEATMAP = [
+            5,  8, 12,  8,  5,
+            8, 15, 22, 15,  8,
+            12, 22, 30, 22, 12,
+            8, 15, 22, 15,  8,
+            5,  8, 12,  8,  5
         ]
+        for p in player_pos:
+            score += HEATMAP[p]
+        for o in opp_pos:
+            score -= HEATMAP[o]
 
-        for sq in squares:
-            cnt = sum(1 for p in sq if p in positions)
+        # --- 2) GROUPING (adjacency improved) ---
+        # Encourage IA à REGROUPER ses pions
+        # Pénalise adversaire groupé : équivalent défensif
+        def neighbors(i):
+            x, y = i % 5, i // 5
+            for dx in (-1,0,1):
+                for dy in (-1,0,1):
+                    if dx==0 and dy==0: continue
+                    nx, ny = x+dx, y+dy
+                    if 0 <= nx < 5 and 0 <= ny < 5:
+                        yield ny*5 + nx
+        
+        group_bonus = 0
+        for p in player_pos:
+            for nb in neighbors(p):
+                if nb in player_pos:
+                    group_bonus += 12   # bonus plus fort qu’avant
+        score += group_bonus
 
-            if cnt == 3:
-                score += 6     
-            elif cnt == 4:
-                score += 25   
+        group_penalty = 0
+        for o in opp_pos:
+            for nb in neighbors(o):
+                if nb in opp_pos:
+                    group_penalty += 10  # défense (un peu moins fort)
+        score -= group_penalty
+
+        # --- 3) ALIGNEMENTS / PATTERNS (attaque + défense) ---
+        # Très important pour Teeko
+        for pattern in self.winning_patterns:
+            pcount = sum(1 for pos in pattern if pos in player_pos)
+            ocount = sum(1 for pos in pattern if pos in opp_pos)
+            empty = 4 - pcount - ocount
+
+            # Si j'ai 3 + 1 vide -> énorme chance de gagner
+            if pcount == 3 and empty == 1:
+                score += 350
+
+            # Si l'adversaire a 3 + 1 vide -> gros danger
+            if ocount == 3 and empty == 1:
+                score -= 420
+
+            # Alignement partiel (positif)
+            if pcount == 2 and empty == 2:
+                score += 35
+            if ocount == 2 and empty == 2:
+                score -= 45
+
+        # --- 4) THREATS (ta fonction existante, on l'utilise !) ---
+        score += self.score_threats(state, player)
+
+        # --- 5) MOBILITY (faible mais utile en phase shift) ---
+        if len(player_pos) == 4:
+            my_moves = len(self.m.get_legal_moves(state, player))
+            op_moves = len(self.m.get_legal_moves(state, opponent))
+            score += (my_moves - op_moves) * 2
 
         return score
     
