@@ -73,9 +73,9 @@ class MinMaxAlphaBeta:
         if not moves:
             return -INF, None
 
-        # ======================================================
-        # 1. DÉTECTION CYCLE AJOUTÉE ICI (aucune logique cassée)
-        # ======================================================
+        # ====================
+        # 1. DÉTECTION CYCLE 
+        # ======================
         cycle_status = self.detect_cycle(state)
 
         # Match nul uniquement en IAvsIA
@@ -84,7 +84,7 @@ class MinMaxAlphaBeta:
             return 0, None
 
         # ======================================================
-        # 2. MOVE ORDERING (identique à l’ancienne version)
+        # 2. MOVE ORDERING 
         # ======================================================
         ordered = []
         for mv in moves:
@@ -175,8 +175,7 @@ class MinMaxAlphaBeta:
         self.node_count += 1
 
         # -------------------------------------------------
-        # FIX 2 : clé de transposition CORRECTE
-        # On ajoute : player + root_player
+        # clé de transposition 
         # -------------------------------------------------
         key = (tuple(state), depth, player, maximizing, self.root_player)
         # -------------------------------------------------

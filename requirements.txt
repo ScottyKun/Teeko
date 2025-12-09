@@ -1,0 +1,4 @@
+# Requirements for Teeko project
+# Note: SWI-Prolog must be installed separately for Prolog integration.
+pyswip>=0.2.0
+pygame>=2.0
