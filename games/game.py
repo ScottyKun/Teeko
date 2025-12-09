@@ -14,10 +14,13 @@ class Game:
         self.selected_from = None # pour le shift
         self.phase_message = ""
         self.message_timer = 0
-        self.engine=AIEngine()
-        ##
+
         self.mode = mode
         self.difficulty = difficulty
+
+        self.engine=AIEngine(difficulty=self.difficulty, mode=self.mode)
+        ##
+        
         self.p1=player1_name
         self.p2=player2_name
         self.game_over = False
@@ -87,6 +90,7 @@ class Game:
                 return
             
             # On applique le coup
+            print(move)
             new_state = self.engine.apply_move(self.board.to_prolog_state(), prolog_player, move)
 
         else:
@@ -158,7 +162,7 @@ class Game:
         prolog_player = self.player_to_prolog(self.current_player)
 
         ai_move = self.engine.get_best_move(self.board.to_prolog_state(), prolog_player)
-
+        print(ai_move)
         if ai_move:
             new_state = self.engine.apply_move(self.board.to_prolog_state(), prolog_player, ai_move)
             

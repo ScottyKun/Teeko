@@ -16,18 +16,34 @@ from AI.evaluation import Evaluation
 from AI.minmax_alphabeta import MinMaxAlphaBeta
 
 class AIEngine:
-    def __init__(self, prolog_file="teeko_rules.pl", max_depth=4):
+    def __init__(self, prolog_file="teeko_rules.pl", difficulty=None, mode=None):
         # Manager pour communiquer avec Prolog
         self.manager = PrologManager(prolog_file)
 
         # Fonction d'évaluation
         self.evaluator = Evaluation(self.manager)
 
+        # Mode de jeu (PvsP, PvsIA, IAvsIA)
+        self.mode = mode
+
+        # Définition des paramètres selon difficulté
+        self.difficulty = difficulty
+        self.difficulty_params = self.get_difficulty_params(difficulty)
+
         # Algorithme MinMax
-        self.minmax = MinMaxAlphaBeta(self.manager, self.evaluator,self, max_depth)
-        self.minmax.time_limit = 3.0
+        self.minmax = MinMaxAlphaBeta(
+            manager=self.manager,
+            evaluator=self.evaluator,
+            engine=self,
+            max_depth=self.difficulty_params["max_depth"],
+            time_limit=self.difficulty_params["placement_time"],
+            mode=self.mode  
+        )
 
     def get_best_move(self,state,player):
+        phase = self.get_phase(state)
+        self.set_time_limit(phase)
+
         score, move = self.minmax.compute(state, player)
         if move:
             return python_to_move_tuple(move)
@@ -69,6 +85,24 @@ class AIEngine:
             return new_state
 
         return new_state
+    
+    # Paramètres selon difficulté
+    def get_difficulty_params(self, difficulty):
+        if difficulty == "Débutant":
+            return {"max_depth": 3, "placement_time": 2.0, "shift_time": 5.0}
+        elif difficulty == "Intermediaire":
+            return {"max_depth": 4, "placement_time": 2.5, "shift_time": 6.5}
+        elif difficulty == "Expert":
+            return {"max_depth": 5, "placement_time": 3.0, "shift_time": 7.5}
+        else:
+            return {"max_depth": 3, "placement_time": 2.5, "shift_time": 5.0}
+
+    # Ajuste le temps limite selon la phase
+    def set_time_limit(self, phase):
+        if phase == "placement":
+            self.minmax.time_limit = self.difficulty_params["placement_time"]
+        else:
+            self.minmax.time_limit = self.difficulty_params["shift_time"]
     
     
 
